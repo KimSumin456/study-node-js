@@ -8,35 +8,40 @@ var app = http.createServer(function(request, response){
     var _pathname = url.parse(_url, true).pathname;
     
     if (_pathname == '/') {
-      fs.readFile(`data/${_query.title}.html`, function(err, description){
-        var title = _query.title;
-        if (title == undefined) {
-          title = 'Welcome';
-          description = 'Hello, Node.js!';
+      fs.readdir('data/', function(error, files) {
+        var list = ``;
+        for (var i = 0; i < files.length; i++) {
+          list += `<li><a href="/?title=${files[i]}">${files[i]}</a></li>`;
         }
 
-        var layout = `
-        <!doctype html>
-        <html>
-        <head>
-          <title>>${title}</title>
-          <meta charset="utf-8">
-        </head>
-        <body>
-          <h1><a href="/?title=WWW">WWW</a></h1>
-          <ol>
-            <li><a href="/?title=HTML">HTML</a></li>
-            <li><a href="/?title=CSS">CSS</a></li>
-            <li><a href="/?title=JS">JS</a></li>
-          </ol>
-          <h2>${title}</h2>
-          <p>${description}</p>
-        </body>
-        </html>
-        `;
-        response.writeHead(200);
-        response.end(layout);
-      });
+        fs.readFile(`data/${_query.title}`, function(error, description){
+          var title = _query.title;
+          if (title == undefined) {
+            title = 'Welcome';
+            description = 'Hello, Node.js!';
+          }
+  
+          var layout = `
+          <!doctype html>
+          <html>
+          <head>
+            <title>${title}</title>
+            <meta charset="utf-8">
+          </head>
+          <body>
+            <h1><a href="/?title=WEB">WEB</a></h1>
+            <ol>
+              ${list}
+            </ol>
+            <h2>${title}</h2>
+            <p>${description}</p>
+          </body>
+          </html>
+          `;
+          response.writeHead(200);
+          response.end(layout);
+        });
+      })
     } else {
       response.writeHead(404);
       response.end('Not found');
