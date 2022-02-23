@@ -1,6 +1,7 @@
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
+var qs = require('querystring');
 
 function getLayoutList(files) {
   var list = ``;
@@ -25,6 +26,9 @@ function getLayout(list, title, description) {
     <ol>
       ${list}
     </ol>
+
+    <a href="/create">Create</a>
+
     <h2>${title}</h2>
     <p>${description}</p>
   </body>
@@ -56,21 +60,47 @@ var app = http.createServer(function(request, response){
           response.end(layout);
         });
       })
+    } else if (_pathname == '/create') {      
+      fs.readdir('data/', function(error, files){
+        var list = getLayoutList(files);
+
+        var title = 'Create';
+        var description = `
+        <form action="/create_process" method="post">
+          <div><input type="submit"></div>
+          <div><input type="text" name="title" placeholder="title"></div>
+          <div><textarea name="description" placeholder="description"></textarea></div>
+        </form>
+        `;
+
+        var layout = getLayout(list, title, description);
+
+        response.writeHead(200);
+        response.end(layout);
+      });
+    } else if (_pathname == '/create_process') {
+      fs.readdir('data/', function(error, files){
+        var list = getLayoutList(files);
+
+        var data = '';
+        request.on('data', function(chunk){
+          data += chunk;        
+        });
+        request.on('end', function(){
+          var dataParsed = qs.parse(data);
+          var title = dataParsed.title;
+          var description = dataParsed.description;
+          
+          fs.writeFile(`data/${title}`, description, function(err){
+            if (err) throw err;
+            response.writeHead(302, { 'Location': `/?id=${title}` });
+            response.end();
+          });
+        });
+      });
     } else {
       response.writeHead(404);
       response.end('Not found');
     }
 })
 app.listen(3000);
-
-/* pm2 사용법
-* npm init 로 package.json 생성
-* npm install --save-dev pm2 로 설치
-* npx pm2 start main.js 로 실행
-* pm2 start main.js --watch 로 실행하면 코드 변경 시 자동으로 노드 재시작해 수정사항 반영됨
-* pm2 log 로 진행사항 및 에러 확인 가능
-*
-* pm2 monit 로 pm2에 의해 실행되고 있는 프로그램 확인 가능
-* pm2 list 로 현재 실행 중인 프로세스 확인 가능
-* pm2 stop main 으로 종료 가능
-*/
