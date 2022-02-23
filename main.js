@@ -62,3 +62,15 @@ var app = http.createServer(function(request, response){
     }
 })
 app.listen(3000);
+
+/* pm2 사용법
+* npm init 로 package.json 생성
+* npm install --save-dev pm2 로 설치
+* npx pm2 start main.js 로 실행
+* pm2 start main.js --watch 로 실행하면 코드 변경 시 자동으로 노드 재시작해 수정사항 반영됨
+* pm2 log 로 진행사항 및 에러 확인 가능
+*
+* pm2 monit 로 pm2에 의해 실행되고 있는 프로그램 확인 가능
+* pm2 list 로 현재 실행 중인 프로세스 확인 가능
+* pm2 stop main 으로 종료 가능
+*/
