@@ -28,6 +28,7 @@ function getLayout(list, title, description) {
     </ol>
 
     <a href="/create">Create</a>
+    <a href="/update?title=${title}">Update</a>
 
     <h2>${title}</h2>
     <p>${description}</p>
@@ -65,7 +66,7 @@ var app = http.createServer(function(request, response){
         var list = getLayoutList(files);
 
         var title = 'Create';
-        var description = `
+        var form = `
         <form action="/create_process" method="post">
           <div><input type="submit"></div>
           <div><input type="text" name="title" placeholder="title"></div>
@@ -73,7 +74,7 @@ var app = http.createServer(function(request, response){
         </form>
         `;
 
-        var layout = getLayout(list, title, description);
+        var layout = getLayout(list, title, form);
 
         response.writeHead(200);
         response.end(layout);
@@ -93,8 +94,53 @@ var app = http.createServer(function(request, response){
           
           fs.writeFile(`data/${title}`, description, function(err){
             if (err) throw err;
-            response.writeHead(302, { 'Location': `/?id=${title}` });
+            response.writeHead(302, { 'Location': `/?title=${title}` });
             response.end();
+          });
+        });
+      });
+    } else if (_pathname == '/update') {      
+      fs.readdir('data/', function(error, files){
+        var list = getLayoutList(files)
+
+        fs.readFile(`data/${_query.title}`, function(error, description){
+          var title = 'Update';
+          var form = `
+          <form action="/update_process" method="post">
+            <div><input type="submit"></div>
+            <div><input type="hidden" name="titlePrev" value="${_query.title}"> </div>
+            <div><input type="text" name="title" placeholder="title" value="${_query.title}"></div>
+            <div><textarea name="description" placeholder="description">${description}</textarea></div>
+          </form>
+          `;
+
+          var layout = getLayout(list, title, form);
+
+          response.writeHead(200);
+          response.end(layout);
+        });
+      });
+    } else if (_pathname == '/update_process') {
+      fs.readdir('data/', function(error, files){
+        var list = getLayoutList(files);
+
+        var data = '';
+        request.on('data', function(chunk){
+          data += chunk;        
+        });
+        request.on('end', function(){
+          var dataParsed = qs.parse(data);
+          var titlePrev = dataParsed.title;
+          var title = dataParsed.title;
+          var description = dataParsed.description;
+          
+          fs.rename(`data/${titlePrev}`, `data/${title}`, function(err){
+            if (err) throw err;
+            fs.writeFile(`data/${title}`, description, function(err){
+              if (err) throw err;
+              response.writeHead(302, { 'Location': `/?title=${title}` });
+              response.end();
+            });
           });
         });
       });
