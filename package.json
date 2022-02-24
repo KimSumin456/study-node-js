@@ -18,5 +18,8 @@
   "homepage": "https://github.com/KimSumin456/study-node-js#readme",
   "devDependencies": {
     "pm2": "^5.2.0"
+  },
+  "dependencies": {
+    "sanitize-html": "^2.7.0"
   }
 }

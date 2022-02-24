@@ -3,6 +3,8 @@ var url = require('url');
 var fs = require('fs');
 var qs = require('querystring');
 var layout = require('./layout');
+var path = require('path');
+var sanitizeHtml = require('sanitize-html');
 
 var app = http.createServer(function(request, response){
     var _url = request.url;
@@ -12,15 +14,20 @@ var app = http.createServer(function(request, response){
     if (_pathname == '/') {
       fs.readdir('data/', function(error, files) {
         var list = layout.getList(files);
-
-        fs.readFile(`data/${_query.title}`, function(error, description){
-          var title = _query.title;
+        
+        var title = (_query.title == undefined ? _query.title : path.parse(_query.title).base);
+        fs.readFile(`data/${title}`, function(error, description){
           if (title == undefined) {
             title = 'Welcome';
             description = 'Hello, Node.js!';
           }
-  
-          var html = layout.getHtml(list, title, description);
+
+          var titleSanitized = sanitizeHtml(title);
+          var descriptionSanitized = sanitizeHtml(description, {
+            allowedTags: ['h2']
+          });
+
+          var html = layout.getHtml(list, titleSanitized, descriptionSanitized);
 
           response.writeHead(200);
           response.end(html);
@@ -51,7 +58,7 @@ var app = http.createServer(function(request, response){
       });
       request.on('end', function(){
         var dataParsed = qs.parse(data);
-        var title = dataParsed.title;
+        var title = path.parse(dataParsed.title).base;
         var description = dataParsed.description;
         
         fs.writeFile(`data/${title}`, description, function(err){
@@ -64,13 +71,13 @@ var app = http.createServer(function(request, response){
       fs.readdir('data/', function(error, files){
         var list = layout.getList(files)
 
-        fs.readFile(`data/${_query.title}`, function(error, description){
+        fs.readFile(`data/${path.parse(_query.title).base}`, function(error, description){
           var title = 'Update';
           var form = `
           <form action="/update_process" method="post">
             <div><input type="submit"></div>
-            <div><input type="hidden" name="titlePrev" value="${_query.title}"> </div>
-            <div><input type="text" name="title" placeholder="title" value="${_query.title}"></div>
+            <div><input type="hidden" name="titlePrev" value="${path.parse(_query.title).base}"> </div>
+            <div><input type="text" name="title" placeholder="title" value="${path.parse(_query.title).base}"></div>
             <div><textarea name="description" placeholder="description">${description}</textarea></div>
           </form>
           `;
@@ -88,8 +95,8 @@ var app = http.createServer(function(request, response){
       });
       request.on('end', function(){
         var dataParsed = qs.parse(data);
-        var titlePrev = dataParsed.title;
-        var title = dataParsed.title;
+        var titlePrev = path.parse(dataParsed.titlePrev).base;
+        var title = path.parse(dataParsed.title).base;
         var description = dataParsed.description;
         
         fs.rename(`data/${titlePrev}`, `data/${title}`, function(err){
@@ -108,7 +115,7 @@ var app = http.createServer(function(request, response){
       });
       request.on('end', function(){
         var dataParsed = qs.parse(data);
-        var title = dataParsed.title;
+        var title = path.parse(dataParsed.title).base;
 
         fs.unlink(`data/${title}`, function(err){
           if (err) throw err;
