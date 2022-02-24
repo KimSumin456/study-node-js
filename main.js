@@ -29,6 +29,10 @@ function getLayout(list, title, description) {
 
     <a href="/create">Create</a>
     <a href="/update?title=${title}">Update</a>
+    <form action="/delete_process" method="post">
+      <input type="hidden" name="title" value="${title}">
+      <input type="submit" value="delete">
+    </form>
 
     <h2>${title}</h2>
     <p>${description}</p>
@@ -141,6 +145,26 @@ var app = http.createServer(function(request, response){
               response.writeHead(302, { 'Location': `/?title=${title}` });
               response.end();
             });
+          });
+        });
+      });
+    } else if (_pathname == '/delete_process') {
+      fs.readdir('data/', function(error, files){
+        var list = getLayoutList(files);
+
+        var data = '';
+        request.on('data', function(chunk){
+          data += chunk;        
+        });
+        request.on('end', function(){
+          var dataParsed = qs.parse(data);
+          var title = dataParsed.title;
+
+          fs.unlink(`data/${title}`, function(err){
+            if (err) throw err;
+            
+            response.writeHead(302, { 'Location': `/` });
+            response.end();
           });
         });
       });
